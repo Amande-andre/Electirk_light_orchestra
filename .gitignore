@@ -1,0 +1,42 @@
+### Fichiers sensibles ###
+.env
+.env.*
+!.env.example  # On conserve un exemple versionné
+
+### Docker ###
+docker-compose.override.yml
+docker-compose.*.yml
+
+### Dossiers de données ###
+/data/*
+!/data/README.md  # Garde un fichier vide pour conserver le dossier
+
+### Python ###
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+### Environnements virtuels ###
+venv/
+.venv/
+env/
+.env/
+
+### Éditeurs/IDE ###
+.vscode/
+.idea/
+*.swp
+*.swo
+
+### Logs ###
+*.log
+logs/
+
+### Système ###
+.DS_Store
+Thumbs.db
+
+### Fichiers temporaires ###
+*.tmp
+*~
