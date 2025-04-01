@@ -16,8 +16,8 @@ services:
     image: prom/prometheus
     container_name: prometheus
     volumes:
-      - prometheus_data:/prometheus
       - ./data/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
     # command:
     #   - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
