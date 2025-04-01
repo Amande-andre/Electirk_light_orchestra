@@ -2,9 +2,9 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir rich
-RUN pip install docker
+RUN pip install --upgrade pip
+RUN pip install rich
+RUN pip install docker flask flask-cors gunicorn
 
 
-ENTRYPOINT ["python", "main.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5042", "main:app"]

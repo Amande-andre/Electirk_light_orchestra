@@ -1,7 +1,7 @@
 # Makefile for Docker Orchestrator Project
 
 # Variables
-NAME		   := Electrik_light_orchestra
+NAME		   := orchestrator
 DOCKER_COMPOSE := docker compose
 PYTHON 		   := python3
 
@@ -29,7 +29,7 @@ help:
 
 build:
 	@echo "${GREEN}Building Docker images...${NC}"
-	@$(DOCKER_COMPOSE) build 
+	@$(DOCKER_COMPOSE) build $(NAME) 
 	@echo "${GREEN}Build Done!${NC}"
 
 up:
@@ -40,7 +40,17 @@ down:
 	@echo "${RED}Stopping and removing containers...${NC}"
 	@$(DOCKER_COMPOSE) down
 
-restart: down up
+run:
+	@echo "${GREEN}Starting services in detached mode...${NC}"
+	docker run -d -p 0.0.0.0:5042:5000 --name orchestrator docker-orchestrator
+	@echo "${GREEN}Services started!${NC}"
+
+start: build up
+	@echo "${GREEN}Services started!${NC}"
+	@echo "${YELLOW}To stop the services, run 'make down'${NC}"
+	@echo "${GREEN}Start is done!${NC}"
+
+restart: down start
 	@echo "${YELLOW}Services restarted${NC}"
 
 logs:
@@ -56,6 +66,8 @@ clean:
 	@docker system prune -f
 	@echo "${GREEN}Done!${NC}"
 
+re: fclean start
+
 # test:
 # 	@echo "${YELLOW}Running basic tests...${NC}"
 # 	@$(DOCKER_COMPOSE) exec orchestrator $(PYTHON) /app/main.py list
@@ -63,7 +75,7 @@ clean:
 
 cli:
 	@echo "${GREEN}Launching CLI interface...${NC}"
-	@$(DOCKER_COMPOSE) exec orchestrator $(PYTHON) /app/main.py
+	@$(DOCKER_COMPOSE) exec -T orchestrator $(PYTHON) /app/main.py $(filter-out $@,$(MAKECMDGOALS))
 
 monitoring:
 	@echo "${GREEN}Opening monitoring interfaces...${NC}"
@@ -72,6 +84,9 @@ monitoring:
 
 fclean: down clean
 	docker builder prune -af
+	docker volume prune -f
+	docker network prune -f
+	docker images prune 
 	@echo "${RED}Stopping and removing containers, volumes, and networks...${NC}"
 	@echo "${GREEN}Done!${NC}"
 # Alias pour la commande par défaut

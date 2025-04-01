@@ -6,7 +6,11 @@ Un outil pour gérer et surveiller les containers Docker avec une interface CLI.
 
 import docker
 import logging
+from   flask import Flask, jsonify, request
+from   flask_cors import CORS
 import argparse
+import sys
+import time
 from rich.console import Console  # Pour l'affichage coloré
 
 # Initialisation de l'interface Rich pour les sorties colorées
@@ -21,6 +25,15 @@ logging.basicConfig(
 
 # Client Docker initialisé avec les paramètres par défaut
 client = docker.from_env()
+
+# Flask app pour l'API REST
+app = Flask(__name__)
+CORS(app)  # Autorise les requêtes CORS
+
+@app.route("/")
+def home():
+    """ Vérification de la connexion à l'API """
+    return jsonify({"message": "Docker CLI orchestrata API is running!"})
 
 def show_container_stats(container_name):
     """
@@ -99,11 +112,13 @@ def control_container(container_id, action):
 
 if __name__ == "__main__":
     # Configuration des arguments CLI avec argparse
+    # while True:
     parser = argparse.ArgumentParser(
         description="Orchestrateur Docker CLI - Gestion avancée des containers",
         epilog="Exemples:\n"
-               "  ./orchestrator.py list --stats\n"
-               "  ./orchestrator.py restart mon_container"
+            "  \n./orchestrator.py list --stats\n"
+            "   (\nou si à la racine )\n"
+            "  ./srcs/CLI/main.py restart mon_container"
     )
     
     subparsers = parser.add_subparsers(dest="command", title="commandes")
@@ -148,3 +163,4 @@ if __name__ == "__main__":
         show_container_stats(args.container_id)  # CORRECTION: Passage de l'argument
     else:
         parser.print_help()
+    time.sleep(1)
