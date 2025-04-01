@@ -1,10 +1,9 @@
-# Docker Light Orchestrator
+## Electirck_Light_orchestra
 
 ## Prérequis
 - Docker 20+
-- Docker Compose 2.2+
-
+- Docker Compose 2.2
+- 
 ## Lancement
-```bash
-cp .env.example .env
-docker compose up -d
+- cp .env.exemple .env # faire les modifications nécessaire
+- make # se laisser guider par le help 
