@@ -16,15 +16,17 @@ help:
 	@echo ""
 	@echo "${GREEN} ${NAME} - Commandes disponibles:${NC}"
 	@echo ""
-	@echo "  ${YELLOW}build${NC}      - Construit les images Docker"
+	@echo "  ${YELLOW}build${NC}     - Construit les images Docker"
 	@echo "  ${YELLOW}up${NC}        - Lance les services en détaché"
 	@echo "  ${YELLOW}down${NC}      - Arrête et supprime les containers"
+	@echo "  ${YELLOW}start${NC}     - Démarre les services (build + up)"
 	@echo "  ${YELLOW}restart${NC}   - Redémarre les services"
 	@echo "  ${YELLOW}logs${NC}      - Affiche les logs des services"
 	@echo "  ${YELLOW}clean${NC}     - Nettoie les ressources Docker"
 	@echo "  ${YELLOW}test${NC}      - Exécute les tests de base"
 	@echo "  ${YELLOW}cli${NC}       - Lance l'interface CLI"
 	@echo "  ${YELLOW}monitoring${NC}- Ouvre les interfaces de monitoring"
+	@echo "  ${YELLOW}logs${NC}      - Affiche les logs des services"
 	@echo ""
 
 build:
@@ -75,8 +77,10 @@ re: fclean start
 
 cli:
 	@echo "${GREEN}Launching CLI interface...${NC}"
-	@$(DOCKER_COMPOSE) exec -T orchestrator $(PYTHON) /app/main.py $(filter-out $@,$(MAKECMDGOALS))
+	@$(DOCKER_COMPOSE) exec -T orchestrator $(PYTHON) /app/main.py $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
+%:
+	@:
 monitoring:
 	@echo "${GREEN}Opening monitoring interfaces...${NC}"
 	@xdg-open http://localhost:3000  # Grafana
