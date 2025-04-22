@@ -1,12 +1,14 @@
 services:
   orchestrator:
     build:
-      context: ./srcs/CLI 
-      dockerfile: ../../DckFiles/orchestra/Dockerfile
+      context: .
+      dockerfile: Dockerfiles/orchestra/Dockerfile
     container_name: orchestra
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./srcs/CLI:/app 
+      - ./srcs/CLI:/app
+    ports:
+      - "5042:5042"
     env_file: .env
     networks:
       - monitoring
@@ -15,9 +17,9 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    volumes:
-      - ./data/prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
+    # volumes:
+    #   - ./data/prometheus:/etc/prometheus
+    #   - prometheus_data:/prometheus
     networks:
       - monitoring
     ports:

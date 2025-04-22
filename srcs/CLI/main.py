@@ -6,16 +6,20 @@ Un outil pour gérer et surveiller les containers Docker avec une interface CLI.
 
 import docker
 import logging
-from   flask import Flask, jsonify, request
-from   flask_cors import CORS
 import argparse
 import sys
 import time
 from rich.console import Console  # Pour l'affichage coloré
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI powered orchestration 👾"}
 
 # Initialisation de l'interface Rich pour les sorties colorées
 console = Console()
-console.print("[bold magenta]Docker CLI orchestrator[/bold magenta]")
 
 # Configuration du système de logging
 logging.basicConfig(
@@ -26,14 +30,16 @@ logging.basicConfig(
 # Client Docker initialisé avec les paramètres par défaut
 client = docker.from_env()
 
-# Flask app pour l'API REST
-app = Flask(__name__)
-CORS(app)  # Autorise les requêtes CORS
+# # Flask app pour l'API REST
+# app = Flask(__name__)
+# CORS(app)  # Autorise les requêtes CORS
 
 @app.route("/")
 def home():
     """ Vérification de la connexion à l'API """
+    
     return jsonify({"message": "Docker CLI orchestrata API is running!"})
+
 
 def show_container_stats(container_name):
     """
@@ -59,10 +65,12 @@ def show_container_stats(container_name):
     [bold]- RAM:[/bold] {mem_usage:.2f} MB
     [bold]- Network:[/bold] {network_in}B in / {network_out}B out
         """)
+    # message = f"Cpu usage: {cpu_usage}, RAM usage: {mem_usage:.2f} MB, Network in: {network_in}B, Network out: {network_out}B"
     except docker.errors.NotFound:
         console.print("[red]Erreur: Container non trouvé[/red]")
     except Exception as e:
         logging.error(f"Erreur lors de la récupération des stats: {e}")
+    # return message
 
 def list_containers(show_stats=False):
     """
