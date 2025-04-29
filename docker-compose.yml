@@ -17,9 +17,8 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    # volumes:
-    #   - ./data/prometheus:/etc/prometheus
-    #   - prometheus_data:/prometheus
+    volumes:
+      - ./data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitoring
     ports:

@@ -3,3 +3,5 @@ fastapi
 uvicorn[standard]
 gunicorn
 docker
+routes
+prometheus_client

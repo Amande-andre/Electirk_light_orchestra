@@ -1,0 +1,27 @@
+<!-- web/index.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Orchestrator UI</title>
+</head>
+<body>
+  <h1>Orchestrator Interface</h1>
+  <textarea id="input" rows="6" cols="60" placeholder="Entrez votre texte…"></textarea><br>
+  <button onclick="sendText()">Envoyer</button>
+  <p id="response"></p>
+
+  <script>
+    async function sendText() {
+      const text = document.getElementById("input").value;
+      const res = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const json = await res.json();
+      document.getElementById("response").innerText = json.message;
+    }
+  </script>
+</body>
+</html>

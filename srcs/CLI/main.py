@@ -2,6 +2,9 @@
 """
 Docker CLI Orchestrator
 Un outil pour gérer et surveiller les containers Docker avec une interface CLI.
+Et une API pour l'intégration avec Prometheus et Grafana.
+Avec une interface web FastAPI pour la visualisation des stats.
+Dans un premier temps, recevoir et revoyer du text.
 """
 
 import docker
@@ -9,166 +12,155 @@ import logging
 import argparse
 import sys
 import time
-from rich.console import Console  # Pour l'affichage coloré
-from fastapi import FastAPI
+from rich.console import Console
+from fastapi import FastAPI, Request
+from fastapi.responses import Response, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from api.routes import router  # Assure-toi que ce module existe
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import start_http_server
+from fastapi.responses import Response
 
-app = FastAPI()
+app = FastAPI(title="Electrik Light Orchestrator")
+
+# Registering FastAPI routes
+app.include_router(router)
+
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/")
 def root():
-    return {"message": "FastAPI powered orchestration 👾"}
+    return {"message": "FastAPI powered orchestration 👾\n"}
 
-# Initialisation de l'interface Rich pour les sorties colorées
+@app.post("/submit")
+async def submit(request: Request):
+    body = await request.json()
+    text = body.get("text", "")
+    # Process the text as needed
+    print(f"[Orchestrator] Received text: {text}", file=sys.stdout, flush=True)
+    # Here you create a file to store the text and after compile or execute
+    filename = f"text_{int(time.time())}.c"
+    return {"message": "Text received successfully!"}
+
+# Rich console for styled output
 console = Console()
 
-# Configuration du système de logging
+# Logging config
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Client Docker initialisé avec les paramètres par défaut
-client = docker.from_env()
-
-# # Flask app pour l'API REST
-# app = Flask(__name__)
-# CORS(app)  # Autorise les requêtes CORS
-
-@app.route("/")
-def home():
-    """ Vérification de la connexion à l'API """
-    
-    return jsonify({"message": "Docker CLI orchestrata API is running!"})
+# Docker client
+try:
+    client = docker.from_env()
+except Exception as e:
+    logging.error(f"Erreur lors de l'initialisation du client Docker: {e}")
+    sys.exit(1)
 
 
 def show_container_stats(container_name):
     """
     Affiche les statistiques temps réel d'un container spécifique.
-    
-    Args:
-        container_name (str): Nom ou ID du container
     """
     try:
         container = client.containers.get(container_name)
-        stats = container.stats(stream=False)  # Récupère les stats une seule fois
-        
-        # Extraction des métriques clés
+        stats = container.stats(stream=False)
+
         cpu_usage = stats['cpu_stats']['cpu_usage']['total_usage']
-        mem_usage = stats['memory_stats']['usage'] / 1024 / 1024  # Conversion en Mo
-        network_in = stats['networks']['eth0']['rx_bytes']  # Réception
-        network_out = stats['networks']['eth0']['tx_bytes']  # Transmission
-        
-        # Affichage formaté avec Rich
+        mem_usage = stats['memory_stats']['usage'] / 1024 / 1024
+        network_in = stats['networks']['eth0']['rx_bytes']
+        network_out = stats['networks']['eth0']['tx_bytes']
+
         console.print(f"""
-    [bold]{container.name}[/bold] :
-    [bold]- CPU:[/bold] {cpu_usage}
-    [bold]- RAM:[/bold] {mem_usage:.2f} MB
-    [bold]- Network:[/bold] {network_in}B in / {network_out}B out
+[bold]{container.name}[/bold] :
+[bold]- CPU:[/bold] {cpu_usage}
+[bold]- RAM:[/bold] {mem_usage:.2f} MB
+[bold]- Network:[/bold] {network_in}B in / {network_out}B out
         """)
-    # message = f"Cpu usage: {cpu_usage}, RAM usage: {mem_usage:.2f} MB, Network in: {network_in}B, Network out: {network_out}B"
     except docker.errors.NotFound:
         console.print("[red]Erreur: Container non trouvé[/red]")
     except Exception as e:
         logging.error(f"Erreur lors de la récupération des stats: {e}")
-    # return message
+
 
 def list_containers(show_stats=False):
     """
-    Liste tous les containers Docker avec leurs statuts de base.
-    
-    Args:
-        show_stats (bool): Si True, affiche les stats CPU/RAM
+    Liste tous les containers Docker avec leurs statuts.
     """
     try:
-        containers = client.containers.list(all=True)  # Inclut les containers arrêtés
-        
+        containers = client.containers.list(all=True)
+
         for container in containers:
-            # Ligne de base avec ID, nom et statut
             info = f"{container.id[:12]} [bold purple]{container.name}[/bold purple] ({container.status})"
             
             if show_stats:
                 try:
                     stats = container.stats(stream=False)
                     cpu = stats['cpu_stats']['cpu_usage']['total_usage']
-                    mem = stats['memory_stats'].get('usage', 'N/A')
-                    info += f" | CPU: {cpu} | RAM: {mem} bytes"
-                except Exception as e:
+                    mem = stats['memory_stats'].get('usage', 0) / 1024 / 1024
+                    info += f" | CPU: {cpu} | RAM: {mem:.2f} MB"
+                except Exception:
                     info += " | [red]Stats indisponibles[/red]"
-            
+
             console.print(info)
     except Exception as e:
         logging.error(f"Erreur lors du listing des containers: {e}")
 
+
 def control_container(container_id, action):
     """
-    Exécute une action de contrôle sur un container (start/stop/restart).
-    
-    Args:
-        container_id (str): ID ou nom du container
-        action (str): Action à exécuter (start/stop/restart)
+    Exécute une action sur un container Docker.
     """
     try:
         container = client.containers.get(container_id)
-        getattr(container, action)()  # Appel dynamique de la méthode
-        
-        # Message de confirmation coloré
+        getattr(container, action)()
         console.print(f"[green]Container {container.name} {action}é avec succès ![/green]")
     except docker.errors.NotFound:
         console.print(f"[red]Erreur: Container {container_id} introuvable ![/red]")
     except Exception as e:
         logging.error(f"Erreur lors de l'action {action}: {e}")
 
+
 if __name__ == "__main__":
-    # Configuration des arguments CLI avec argparse
-    # while True:
     parser = argparse.ArgumentParser(
         description="Orchestrateur Docker CLI - Gestion avancée des containers",
         epilog="Exemples:\n"
-            "  \n./orchestrator.py list --stats\n"
-            "   (\nou si à la racine )\n"
-            "  ./srcs/CLI/main.py restart mon_container"
+               "  ./orchestrator.py list --stats\n"
+               "  ./orchestrator.py restart mon_container"
     )
-    
+
     subparsers = parser.add_subparsers(dest="command", title="commandes")
 
     # Commande 'list'
     list_parser = subparsers.add_parser("list", help="Lister les containers")
     list_parser.add_argument(
-        "--stats", 
-        action="store_true", 
+        "--stats",
+        action="store_true",
         help="Afficher les statistiques CPU/RAM"
     )
 
-    # Commandes de contrôle
+    # Commandes start/stop/restart
     for action in ["start", "stop", "restart"]:
-        action_parser = subparsers.add_parser(
-            action, 
-            help=f"{action} un container"
-        )
-        action_parser.add_argument(
-            "container_id", 
-            help="ID ou nom du container"
-        )
-    
-    # Commande 'show_stats' (ajoutée séparément pour plus de clarté)
-    stats_parser = subparsers.add_parser(
-        "show_stats", 
-        help="Afficher les stats détaillées d'un container"
-    )
-    stats_parser.add_argument(
-        "container_id",  # CORRECTION: Ajout de l'argument manquant
-        help="ID ou nom du container"
-    )
+        action_parser = subparsers.add_parser(action, help=f"{action} un container")
+        action_parser.add_argument("container_id", help="ID ou nom du container")
+
+    # Commande 'show_stats'
+    stats_parser = subparsers.add_parser("show_stats", help="Afficher les stats d’un container")
+    stats_parser.add_argument("container_id", help="ID ou nom du container")
 
     args = parser.parse_args()
 
-    # Gestion des commandes
     if args.command == "list":
         list_containers(show_stats=args.stats)
     elif args.command in ["start", "stop", "restart"]:
         control_container(args.container_id, args.command)
     elif args.command == "show_stats":
-        show_container_stats(args.container_id)  # CORRECTION: Passage de l'argument
+        show_container_stats(args.container_id)
     else:
         parser.print_help()
-    time.sleep(1)
