@@ -23,24 +23,35 @@
       containers.forEach(c => {
         const div = document.createElement("div");
         div.innerHTML = `
-          <strong>${c.name}</strong> (<span class="status">${c.status}</span>) 
-          <button onclick="sendAction('${c.id}', 'start')">Start</button>
-          <button onclick="sendAction('${c.id}', 'stop')">Stop</button>
-          <button onclick="sendAction('${c.id}', 'restart')">Restart</button>
+            <strong>${c.name}</strong> (<span class="status">${c.status}</span>) 
+            <button onclick="sendAction('${c.id}', 'start')">Start</button>
+            <button onclick="sendAction('${c.id}', 'stop')">Stop</button>
+            <button onclick="sendAction('${c.id}', 'restart')">Restart</button>
+            <button onclick="rcvAction('${c.id}', 'stats')">Stats</button>  
         `;
         listDiv.appendChild(div);
       });
     }
 
     async function sendAction(id, action) {
-      try {
-        const res = await fetch(`/containers/${id}/${action}`, { method: "POST" });
-        const result = await res.json();
-        document.getElementById("msg").textContent = result.status || result.detail;
-        fetchContainers(); // Refresh status
-      } catch (err) {
+        try {
+            const res = await fetch(`/containers/${id}/${action}`, { method: "POST" });
+            const result = await res.json();
+            document.getElementById("msg").textContent = result.status || result.detail;
+            fetchContainers(); // Refresh status
+        } catch (err) {
         document.getElementById("msg").textContent = "Erreur : " + err;
-      }
+        }
+    }
+    
+    async function rcvAction(id, action) {
+        try {
+            const res = await fetch(`/containers/${id}/${action}`, { method: "GET" });
+            const result = await res.json();
+            document.getElementById("msg").textContent = JSON.stringify(result, null, 2);
+        } catch (err) {
+            document.getElementById("msg").textContent = "Erreur : " + err;
+        }
     }
 
     fetchContainers();

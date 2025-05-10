@@ -79,8 +79,9 @@ cli:
 
 monitoring:
 	@echo "${GREEN}Opening monitoring interfaces...${NC}"
-	@xdg-open http://localhost:3000  # Grafana
-	@xdg-open http://localhost:9090  # Prometheus
+	@xdg-open http://localhost:3000  			# Grafana
+	@xdg-open http://localhost:9090  			# Prometheus
+	@xdg-open http://localhost:5042/containers  # Orchestrator
 
 fclean: down clean
 	docker builder prune -af
