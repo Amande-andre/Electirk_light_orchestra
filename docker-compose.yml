@@ -17,8 +17,6 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    volumes:
-      - ./data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitoring
     ports:
@@ -27,9 +25,6 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./data/grafana/provisioning:/etc/grafana/provisioning
     env_file: .env
     networks:
       - monitoring

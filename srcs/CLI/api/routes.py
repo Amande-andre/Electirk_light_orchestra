@@ -1,6 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+import services.docker_controle as docker_controle
 
 router = APIRouter()
+
+# public static class DockerControle:
 
 @router.get("/status", tags=["Health"])
 def read_root():

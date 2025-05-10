@@ -15,20 +15,29 @@ import time
 from rich.console import Console
 from fastapi import FastAPI, Request
 from fastapi.responses import Response, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from api.routes import router  # Assure-toi que ce module existe
+from api.routes import router
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import start_http_server
-from fastapi.responses import Response
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI(title="Electrik Light Orchestrator")
+
+# app.mount(
+#     "/static",
+#     StaticFiles(directory="srcs/CLI/web", html=True),
+#     name="static"
+# )
 
 # Registering FastAPI routes
 app.include_router(router)
 
-app.mount("/", StaticFiles(directory="web", html=True), name="web")
-
+@app.get("/", response_class=HTMLResponse)
+async def serve_index():
+    html_path = Path(__file__).parent / "web" / "index.html"
+    return html_path.read_text(encoding="utf-8")
 @app.get("/metrics")
 def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
@@ -37,16 +46,12 @@ def metrics():
 def root():
     return {"message": "FastAPI powered orchestration 👾\n"}
 
-@app.post("/submit")
-async def submit(request: Request):
-    body = await request.json()
-    text = body.get("text", "")
-    # Process the text as needed
-    print(f"[Orchestrator] Received text: {text}", file=sys.stdout, flush=True)
-    # Here you create a file to store the text and after compile or execute
-    filename = f"text_{int(time.time())}.c"
-    return {"message": "Text received successfully!"}
-
+@router.post("/submit", response_class=HTMLResponse)
+async def submit_text(user_text: str = "Enter text here"):
+    # Ici tu peux logguer, stocker ou traiter le texte
+    print(f"Texte reçu : {user_text}")
+    return f"<h2>Merci pour votre texte !</h2><p>{user_text}</p>"
+    
 # Rich console for styled output
 console = Console()
 
