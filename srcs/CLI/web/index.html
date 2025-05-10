@@ -1,13 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Text Input</title>
+  <meta charset="UTF-8">
+  <title>Gestion des Containers</title>
+  <style>
+    button { margin: 0 5px; }
+    .status { font-style: italic; color: gray; }
+  </style>
 </head>
 <body>
-    <h1>Envoyer un texte</h1>
-    <form action="/submit" method="post">
-        <textarea name="user_text" rows="4" cols="50" placeholder="Écris ici..."></textarea><br>
-        <button type="submit">Envoyer</button>
-    </form>
+  <h1>Liste des Containers</h1>
+  <div id="containerList"></div>
+  <p id="msg"></p>
+
+  <script>
+    async function fetchContainers() {
+      const res = await fetch("/containers");
+      const containers = await res.json();
+      const listDiv = document.getElementById("containerList");
+      listDiv.innerHTML = "";
+
+      containers.forEach(c => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <strong>${c.name}</strong> (<span class="status">${c.status}</span>) 
+          <button onclick="sendAction('${c.id}', 'start')">Start</button>
+          <button onclick="sendAction('${c.id}', 'stop')">Stop</button>
+          <button onclick="sendAction('${c.id}', 'restart')">Restart</button>
+        `;
+        listDiv.appendChild(div);
+      });
+    }
+
+    async function sendAction(id, action) {
+      try {
+        const res = await fetch(`/containers/${id}/${action}`, { method: "POST" });
+        const result = await res.json();
+        document.getElementById("msg").textContent = result.status || result.detail;
+        fetchContainers(); // Refresh status
+      } catch (err) {
+        document.getElementById("msg").textContent = "Erreur : " + err;
+      }
+    }
+
+    fetchContainers();
+  </script>
 </body>
 </html>

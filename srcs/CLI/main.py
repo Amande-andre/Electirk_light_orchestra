@@ -43,8 +43,8 @@ def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/")
-def root():
-    return {"message": "FastAPI powered orchestration 👾\n"}
+def serve_html():
+    return FileResponse("srcs/CLI/web/index.html")
 
 @router.post("/submit", response_class=HTMLResponse)
 async def submit_text(user_text: str = "Enter text here"):
@@ -125,7 +125,7 @@ def control_container(container_id, action):
     try:
         container = client.containers.get(container_id)
         getattr(container, action)()
-        console.print(f"[green]Container {container.name} {action}é avec succès ![/green]")
+        console.print(f"[green]Container {container.name} {action} avec succès ![/green]")
     except docker.errors.NotFound:
         console.print(f"[red]Erreur: Container {container_id} introuvable ![/red]")
     except Exception as e:
