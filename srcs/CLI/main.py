@@ -12,8 +12,9 @@ import logging
 import argparse
 import sys
 import time
+import requests
 from rich.console import Console
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.responses import Response, HTMLResponse
 from api.routes import router
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -21,6 +22,7 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import start_http_server
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
+
 
 
 app = FastAPI(title="Electrik Light Orchestrator")
@@ -45,6 +47,7 @@ def metrics():
 @app.get("/")
 def serve_html():
     return FileResponse("srcs/CLI/web/index.html")
+    
 
 @router.post("/submit", response_class=HTMLResponse)
 async def submit_text(user_text: str = "Enter text here"):

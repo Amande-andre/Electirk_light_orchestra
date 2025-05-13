@@ -5,3 +5,5 @@ gunicorn
 docker
 routes
 prometheus_client
+requests
+python-multipart==0.0.7

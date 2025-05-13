@@ -63,6 +63,7 @@ ps:
 
 clean:
 	@echo "${RED}Cleaning Docker resources...${NC}"
+	@docker rmi $(docker images -q) --force
 	@docker system prune -f
 	@echo "${GREEN}Done!${NC}"
 

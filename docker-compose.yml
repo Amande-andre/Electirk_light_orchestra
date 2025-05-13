@@ -1,4 +1,14 @@
 services:
+  compiler:
+    build:
+      context: .
+      dockerfile: Dockerfiles/compiler/Dockerfile
+    container_name: compiler
+    ports:
+      - "5043:5042"
+    networks:
+      - monitoring
+
   orchestrator:
     build:
       context: .
@@ -13,6 +23,8 @@ services:
     networks:
       - monitoring
     restart: on-failure
+    depends_on:
+      - compiler
 
   prometheus:
     image: prom/prometheus

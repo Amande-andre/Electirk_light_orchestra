@@ -6,6 +6,28 @@
   <style>
     button { margin: 0 5px; }
     .status { font-style: italic; color: gray; }
+    .upload-section {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    pre.output {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      margin-top: 15px;
+    }
+    .error {
+      color: #d9534f;
+    }
+    .success {
+      color: #5cb85c;
+    }
   </style>
 </head>
 <body>
@@ -13,13 +35,24 @@
   <div id="containerList"></div>
   <p id="msg"></p>
 
+  <div class="upload-section">
+    <h2>Compiler et exécuter un fichier C</h2>
+    <form id="uploadForm">
+      <input type="file" id="codeFile" accept=".c" required />
+      <button type="submit">Compiler et exécuter</button>
+    </form>
+    <div id="compileResult" class="result-section">
+      <div id="error"></div>
+      <div id="output"></div>
+    </div>
+  </div>
+
   <script>
     async function fetchContainers() {
       const res = await fetch("/containers");
       const containers = await res.json();
       const listDiv = document.getElementById("containerList");
       listDiv.innerHTML = "";
-
       containers.forEach(c => {
         const div = document.createElement("div");
         div.innerHTML = `
@@ -32,7 +65,7 @@
         listDiv.appendChild(div);
       });
     }
-
+    
     async function sendAction(id, action) {
         try {
             const res = await fetch(`/containers/${id}/${action}`, { method: "POST" });
@@ -54,6 +87,60 @@
         }
     }
 
+    // Gestion de l'envoi du fichier C
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('codeFile');
+      if (!fileInput.files[0]) {
+        document.getElementById('compileResult').innerHTML = '<p class="error">Veuillez sélectionner un fichier</p>';
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      
+      try {
+      document.getElementById('compileResult').innerHTML = '<p>Envoi et compilation en cours...</p>';
+      
+      const response = await fetch('/compile', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      let resultHTML = '';
+      
+      if (result.success) {
+        resultHTML += `<p class="success">${result.message}</p>`;
+        
+        if (result.exit_code !== undefined) {
+          resultHTML += `<p>Code de sortie: ${result.exit_code}</p>`;
+        }
+        
+        if (result.output) {
+          resultHTML += `<h3>Sortie du programme:</h3>
+                        <pre class="output">${result.output}</pre>`;
+        }
+          
+        if (result.error_output) {
+          resultHTML += `<h3>Erreurs:</h3>
+                        <pre class="output error">${result.error_output}</pre>`;
+        }
+      
+      } 
+      
+      else {
+        resultHTML += `<p class="error">Erreur: ${result.error}</p>`;
+      }
+        
+        document.getElementById('compileResult').innerHTML = resultHTML;
+      } catch (error) {
+        document.getElementById('compileResult').innerHTML = `<p class="error">Erreur lors de l'envoi: ${error}</p>`;
+      }
+    });
+    
     fetchContainers();
   </script>
 </body>
