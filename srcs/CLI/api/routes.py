@@ -1,11 +1,34 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Security
 import services.docker_controle as docker_controle
 import requests
 import os
+from fastapi.security import APIKeyHeader
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key_header = APIKeyHeader(name="API-Key", auto_error=False)
 
 router = APIRouter()
 
+######## Token Authentication ########
+
+class TokenAuth:
+    
+    def __init__(self):
+        self.token = os.getenv("API_TOKEN", "default_secure_token")
+    
+    def check_token(self, api_key: str = Security(api_key_header)):
+        if api_key != self.token:
+            raise HTTPException(
+                status_code=403,
+                detail="Accès non autorisé. Token invalide."
+            )
+        return True
+
+token_auth = TokenAuth()
+
 ######## GET methods ########
+
 @router.get("/status", tags=["Health"])
 def read_root():
     return {"message": "Electrik Light Orchestrator API is live"}
@@ -31,7 +54,7 @@ def start_container(container_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/containers/{container_id}/stop", tags=["Containers"])
-def stop_container(container_id: str):
+def stop_container(container_id: str, authenticated:bool = Depends(token_auth.check_token)):
     try:
         return docker_controle.stop_container(container_id)
     except Exception as e:
@@ -42,7 +65,7 @@ def restart_container(container_id: str):
     try:
         docker_controle.restart_container(container_id)
         return {"status": f"Container {container_id} restarted."}
-    except Exception as e:
+    except Excpassword_admineption as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/compile", tags=["Compiler"])

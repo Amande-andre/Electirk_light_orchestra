@@ -7,3 +7,4 @@ routes
 prometheus_client
 requests
 python-multipart==0.0.7
+python-dotenv
