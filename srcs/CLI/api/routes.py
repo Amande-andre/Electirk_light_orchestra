@@ -61,7 +61,7 @@ def stop_container(container_id: str, authenticated:bool = Depends(token_auth.ch
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/containers/{container_id}/restart", tags=["Containers"])
-def restart_container(container_id: str):
+def restart_container(container_id: str, authenticated:bool = Depends(token_auth.check_token)):
     try:
         docker_controle.restart_container(container_id)
         return {"status": f"Container {container_id} restarted."}
